@@ -1,0 +1,20 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""
+    titand
+
+    Titan Daemon
+
+    :copyright: (c) 2012 by Openlabs Technologies & Consulting (P) Limited
+    :license: BSD, see LICENSE for more details.
+"""
+from tornado import ioloop
+from tornado.options import options
+from monstor.app import make_app
+
+from titan.settings import SETTINGS
+
+if __name__ == '__main__':
+    application = make_app(**settings)
+    application.listen(options.port, address=options.address)
+    ioloop.IOLoop.instance().start()
