@@ -10,8 +10,8 @@ from mongoengine import Document, EmbeddedDocument
 from mongoengine import (StringField, ReferenceField, ListField, FileField,
     DateTimeField, EmbeddedDocumentField)
 from monstor.utils.i18n import _
-
 from monstor.contrib.auth.models import User as MonstorUser
+
 
 STATUS_CHOICES = [
     ('new', 'New'),
@@ -25,32 +25,69 @@ class Organisation(Document):
     """
     Model for Organisation
     """
-    name = StringField(required=True, verbose_name=_("Name"))
+
+    #: The Organisation name
+    name = StringField(
+        required=True, verbose_name=_("Name")
+    )
+
+    #: Upload the image for the organisation
+    image = FileField(verbose_name=_("Image"))
+
+    #: Short identifier for the organisation, used in url
+    slug = StringField(verbose_name=_("Slug"), required=True)
+
+    @property
+    def teams(self):
+        return Team.objects.find(organisation=self).all()
 
 
 class User(MonstorUser):
     """
     Extend users to make it a part of Organisation
     """
-    #: The organisations this user is a part of. The user can create new 
-    #: projects in the organisation that the user is a member of
-    organisations = ListField(
-        ReferenceField(Organisation), verbose_name=_("Organisations")
+
+    @property
+    def organisations(self):
+        # Find list of teams the user is a part of
+        # Find the set of organisations the lists belong to
+        # That is the the list of organisations the user belongs to
+        raise Exception("Not implemented yet")
+
+
+class Team(Document):
+    """
+    Teams are collection of Users under an Organisation
+    This logical separation allows ACL on Projects
+    """
+
+    #: Provide the name for the team
+    name = StringField(required=True, verbose_name=_("Name"))
+
+    #: The organisation the Team belongs to
+    organisation = ReferenceField(
+        Organisation, required=True, verbose_name=_("Organisation")
+    )
+
+    #: The list of members in the team
+    members = ListField(
+        ReferenceField(User), verbose_name=_("Members")
     )
 
 
-class ProjectMember(EmbeddedDocument):
+class AccessControlList(EmbeddedDocument):
     """
     Model for a member in a project
     """
-    user = ReferenceField(User, required=True, verbose_name=_("User"))
+    team = ReferenceField(Team, required=True, verbose_name=_("Team"))
+
     #: If the user is a project admin, the user can invite more users to the
     #: project.
     role = StringField(
-        verbose_name=_("Project Admin"), choices=[
-            ('admin', 'Admin. Invite users to project and delete comments'),
-            ('participant', 'Participants can do everything except invite'),
-            ('observer', 'Read only access to the project'),
+        verbose_name=_("Role"), choices=[
+            ('admin', _('Admin.Invite users to project and delete comments')),
+            ('participant', _('Participants can do everything except invite')),
+            ('observer', _('Read only access to the project')),
         ],
         required=True
     )
@@ -60,9 +97,21 @@ class Project(Document):
     """
     Model for project
     """
+
+    #: The name of the project
     name = StringField(required=True, verbose_name=_("Name"))
-    members = ListField(
-        EmbeddedDocumentField(ProjectMember), verbose_name=_("Members")
+
+    #: The list of tems in the project
+    acl = ListField(
+        EmbeddedDocumentField(AccessControlList), verbose_name=_("ACL")
+    )
+
+    #: Short identifier for the project, used in url
+    slug = StringField(verbose_name=_("Slug"))
+
+    #: The name of the organisation, under which this project exist
+    organisation = ReferenceField(
+        Organisation, verbose_name=_("Organisation"), required=True
     )
 
 
@@ -70,12 +119,14 @@ class FollowUp(EmbeddedDocument):
     """
     A follow up to a specific task
     """
+
     #: The follow up comment/message
     message = StringField(verbose_name=_("Message"))
 
     #: The status from which the change happened
     from_status = StringField(
-        verbose_name=_("From Status"), choices=STATUS_CHOICES
+        verbose_name=_("From Status"), default="new",
+        choices=STATUS_CHOICES
     )
 
     #: The end state
@@ -95,26 +146,46 @@ class FollowUp(EmbeddedDocument):
     attachments = ListField(FileField(), verbose_name=_("Attachments"))
 
 
+class TaskList(Document):
+    """
+    A model for Task list
+    """
+
+    #: The name of the task list
+    name = StringField(required=True, verbose_name=_("Name"))
+
+    #: The name of the project, under which this task list exist
+    project = ReferenceField(Project, required=True, verbose_name=_("Project"))
+
+
 class Task(Document):
     """
     A model for Tasks
     """
+
+    #: The title of the task
     title = StringField(required=True, verbose_name=_("Title"))
+
+    #: The status of the current task
     status = StringField(
         required=True, verbose_name=_("Status"), choices=STATUS_CHOICES
     )
     due_date = DateTimeField(verbose_name=_("Due Date"))
 
+    #: The name of the user, who has assigned this task
     assigned_to = ReferenceField(
         User, required=True, verbose_name=_("Assigned to")
     )
+
     #: The list of users who have access to this document. If left empty, all
     #: users in the current project will have access to the document.     
     permissions = ListField(ReferenceField(User))
-
+    
     #: The list of users who will be sent an alert on being sent an email
     watchers = ListField(ReferenceField(User))
 
+    #: The reference to the task list
+    task_list = ReferenceField(TaskList, required=True)
     follow_ups = ListField(EmbeddedDocumentField(FollowUp))
 
     @property
