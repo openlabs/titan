@@ -6,7 +6,7 @@
     :copyright: (c) 2012 by Openlabs Technologies & Consulting (P) LTD
     :license: BSD, see LICENSE for more details.
 """
-from mongoengine import Document, EmbeddedDocument
+from mongoengine import Document, EmbeddedDocument, ValidationError
 from mongoengine import (StringField, ReferenceField, ListField, FileField,
     DateTimeField, EmbeddedDocumentField)
 from monstor.utils.i18n import _
@@ -35,11 +35,11 @@ class Organisation(Document):
     image = FileField(verbose_name=_("Image"))
 
     #: Short identifier for the organisation, used in url
-    slug = StringField(verbose_name=_("Slug"), required=True)
+    slug = StringField(verbose_name=_("Slug"), required=True, unique=True)
 
     @property
     def teams(self):
-        return Team.objects.find(organisation=self).all()
+        return Team.objects(organisation=self).all()
 
 
 class User(MonstorUser):
@@ -103,16 +103,34 @@ class Project(Document):
 
     #: The list of tems in the project
     acl = ListField(
-        EmbeddedDocumentField(AccessControlList), verbose_name=_("ACL")
+        EmbeddedDocumentField(AccessControlList), verbose_name=_("ACL"),
+        required=True
     )
 
     #: Short identifier for the project, used in url
-    slug = StringField(verbose_name=_("Slug"))
+    slug = StringField(verbose_name=_("Slug"), required=True)
 
     #: The name of the organisation, under which this project exist
     organisation = ReferenceField(
         Organisation, verbose_name=_("Organisation"), required=True
     )
+
+    def validate(self):
+        """
+        Whenever we create a new project or update an existing project object,
+        validates the slug field to ensure that the slug is unique under the
+        current organisation. If the slug is already existing raise a
+        validation error.
+        """
+        super(Project, self).validate()
+        duplicate = Project.objects(
+            organisation=self.organisation,
+            slug=self.slug,
+        )
+        if (len(duplicate) > 1) or (duplicate and duplicate[0].id != self.id):
+            raise ValidationError(
+                "Duplicate %s: %s" % ("slug", self.slug)
+            )
 
 
 class FollowUp(EmbeddedDocument):
@@ -176,10 +194,6 @@ class Task(Document):
     assigned_to = ReferenceField(
         User, required=True, verbose_name=_("Assigned to")
     )
-
-    #: The list of users who have access to this document. If left empty, all
-    #: users in the current project will have access to the document.     
-    permissions = ListField(ReferenceField(User))
     
     #: The list of users who will be sent an alert on being sent an email
     watchers = ListField(ReferenceField(User))
