@@ -49,10 +49,10 @@ class User(MonstorUser):
 
     @property
     def organisations(self):
-        # Find list of teams the user is a part of
-        # Find the set of organisations the lists belong to
-        # That is the the list of organisations the user belongs to
-        raise Exception("Not implemented yet")
+        """
+        Returns a list of organisations the user belongs to.
+        """
+        return set([t.organisation for t in Team.objects(members=self)])
 
 
 class Team(Document):

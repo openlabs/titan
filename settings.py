@@ -10,5 +10,3 @@ SETTINGS = {
     'template_path': resource_filename('titan', 'templates'),
     'login_url': '/login'
 }
-
-
