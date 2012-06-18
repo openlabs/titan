@@ -9,4 +9,11 @@ database = '%(project)s_production'
 # db_username = "username"
 # db_password = "password"
 
-# login_url = "/login"
+#smtp_server = "localhost"
+#smtp_port = 587
+#smtp_ssl = False
+#smtp_tls = False
+#smtp_password = False
+#smtp_user = False
+#email_sender= "email id"
+login_url = "/login"

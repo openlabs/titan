@@ -354,6 +354,42 @@ class TestModel(unittest.TestCase):
         )
         self.assertRaises(ValidationError, task.save)
 
+    def test_0150_user_organisation(self):
+        """
+        Test the organisation property of user
+        """
+        user_2 = User(
+            name="test-user",
+            email="test@sample.com",
+        )
+        user_2.set_password("openlabs")
+        user_2.save()
+
+        # Create organisations
+        organisation_1 = Organisation(
+            name="open labs", slug=slugify("open labs")
+        )
+        organisation_1.save()
+        organisation_2 = Organisation(
+            name="new organisation", slug=slugify("new organisation")
+        )
+        organisation_2.save()
+
+        # Create teams
+        team_developers = Team(
+            name="Developers", organisation=organisation_1,
+            members=[self.user, user_2]
+        )
+        team_developers.save()
+        team_participants = Team(
+            name="Paricipants", organisation=organisation_2,
+            members=[self.user]
+        )
+        team_participants.save()
+        self.assertEqual(len(self.user.organisations), 2)
+        self.assertEqual(len(user_2.organisations), 1)
+
+
     @classmethod
     def tearDownClass(cls):
         c = _get_connection()
