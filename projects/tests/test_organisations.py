@@ -46,13 +46,13 @@ class TestOrganisations(testing.AsyncHTTPTestCase):
         Test the HTML response
         """
         response = self.fetch(
-            '/organisations/', method="GET", follow_redirects=False
+            '/my-organisations/', method="GET", follow_redirects=False
         )
         self.assertEqual(response.code, 302)
 
         cookies = self.get_login_cookie()
         response = self.fetch(
-            '/organisations/', method="GET", follow_redirects=False,
+            '/my-organisations/', method="GET", follow_redirects=False,
             headers ={'Cookie' : cookies}
         )
         self.assertEqual(response.code, 200)
@@ -62,7 +62,7 @@ class TestOrganisations(testing.AsyncHTTPTestCase):
         Test the JSON response
         """
         response = self.fetch(
-            '/organisations/', method="GET", follow_redirects=False,
+            '/my-organisations/', method="GET", follow_redirects=False,
             headers={'X-Requested-With': 'XMLHTTPRequest'}
         )
         self.assertEqual(response.code, 302)
@@ -73,13 +73,13 @@ class TestOrganisations(testing.AsyncHTTPTestCase):
         in and a 404 when logged in
         """
         response = self.fetch(
-            '/organisations/an-invalid-org', method="GET",
+            '/an-invalid-org', method="GET",
             follow_redirects=False,
         )
         self.assertEqual(response.code, 302)
 
         response = self.fetch(
-            '/organisations/an-invalid-org', method="GET",
+            '/an-invalid-org', method="GET",
             follow_redirects=False,
             headers={
                 'X-Requested-With': 'XMLHTTPRequest',
@@ -94,7 +94,7 @@ class TestOrganisations(testing.AsyncHTTPTestCase):
         """
         slug = slugify("a new organisation")
         response = self.fetch(
-            '/organisations/+slug-check', method="POST",
+            '/+slug-check', method="POST",
             follow_redirects=False,
             headers={
                 'Cookie': self.get_login_cookie()
@@ -116,7 +116,7 @@ class TestOrganisations(testing.AsyncHTTPTestCase):
         organisation.save()
         slug = slugify("new organisation")
         response = self.fetch(
-            '/organisations/+slug-check', method="POST",
+            '/+slug-check', method="POST",
             follow_redirects=False,
             headers={
                 'Cookie': self.get_login_cookie()
@@ -135,7 +135,7 @@ class TestOrganisations(testing.AsyncHTTPTestCase):
         slug = slugify('new organisation')
         cookies = self.get_login_cookie()
         response = self.fetch(
-            '/organisations/', method="POST", follow_redirects=False,
+            '/my-organisations/', method="POST", follow_redirects=False,
             headers={
                 'Cookie': cookies
             },
@@ -156,7 +156,7 @@ class TestOrganisations(testing.AsyncHTTPTestCase):
         cookies = self.get_login_cookie()
         slug = slugify('new organisation')
         response = self.fetch(
-            '/organisations/', method="POST", follow_redirects=False,
+            '/my-organisations/', method="POST", follow_redirects=False,
             headers={
                 'Cookie': cookies
             },
@@ -173,7 +173,7 @@ class TestOrganisations(testing.AsyncHTTPTestCase):
         slug = slugify('new organisation')
         cookies = self.get_login_cookie()
         response = self.fetch(
-            '/organisations/', method="POST", follow_redirects=False,
+            '/my-organisations/', method="POST", follow_redirects=False,
             headers={
                 'Cookie': cookies
             },

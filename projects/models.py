@@ -194,7 +194,7 @@ class Task(Document):
     assigned_to = ReferenceField(
         User, required=True, verbose_name=_("Assigned to")
     )
-    
+
     #: The list of users who will be sent an alert on being sent an email
     watchers = ListField(ReferenceField(User))
 
